@@ -1,6 +1,7 @@
 "use client"
 
 import { useExercicios } from "@/hooks/useExercicios"
+import { useIngredients } from "@/hooks/useIngredients"
 
 export default function PaginaExercicios() {
   const { data, isLoading, error } = useExercicios()
@@ -16,7 +17,7 @@ export default function PaginaExercicios() {
           <div key={item.id} className="border rounded p-4">
             <h2 className="font-semibold text-lg">id: {item.id}</h2>
             <p className="text-sm text-gray-500">
-              Categoria: {item.category?.name || "N/A"}
+              Musculo: {item.muscles || "N/A"}
             </p>
             <p className="text-sm text-gray-500">
               Autor: <span> {item.license_author} </span>
