@@ -1,40 +1,46 @@
+// src/hooks/useMeals.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/services/api"
+import { IMeal } from "@/interfaces/IMeal"
 
-export interface MealDTO {
-  id: number
-  name: string
-  time: string       // "08:00"
-  nutrition_plan: number
-}
-
-/* Lista as refeições de determinado plano */
+/** Lista as refeições de determinado plano */
 export const useMeals = (planId: number) =>
-  useQuery({
+  useQuery<IMeal[], Error>({
     queryKey: ["meals", planId],
     queryFn: async () => {
-      const { data } = await api.get("meal/", {
+      const { data } = await api.get<{
+        results: IMeal[]
+      }>("meal/", {
         params: { nutrition_plan: planId },
       })
-      return data.results as MealDTO[]
+      return data.results
     },
   })
 
-/* Cria refeição */
+/** Cria uma nova refeição */
 export const useCreateMeal = () => {
   const qc = useQueryClient()
+
   return useMutation<
-    MealDTO,
-    unknown,
-    Omit<MealDTO, "id">,
-    unknown
+    IMeal,               // retorno da API
+    Error,               // erro
+    Omit<IMeal, "id">    // payload aceito
   >({
     mutationFn: async (payload) => {
-      const { data } = await api.post("meal/", payload)
-      return data as MealDTO
+      /** 
+       * A API espera:
+       * { name: string; time: string; nutrition_plan: number }
+       */
+      const postBody = {
+        name: payload.name,
+        time: payload.time,
+        nutrition_plan: payload.plan,
+      }
+      const { data } = await api.post<IMeal>("meal/", postBody)
+      return data
     },
     onSuccess: (newMeal) => {
-      qc.invalidateQueries({ queryKey: ["meals", newMeal.nutrition_plan] })
+      qc.invalidateQueries({ queryKey: ["meals", newMeal.plan] })
     },
   })
 }

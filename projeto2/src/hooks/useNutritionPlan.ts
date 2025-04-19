@@ -20,24 +20,33 @@ export const useNutritionPlan = () =>
   })
 
 export const useCreateNutritionPlan = () => {
-  // 1) pega o queryClient aqui dentro
   const queryClient = useQueryClient()
-
-  return useMutation<
-    INutritionPlan,       // tipo retornado pelo POST
-    Error,                    // tipo de erro
-    INutritionPlan        // tipo do payload
-  >({
-    mutationFn: async (payload) => {
-      const { data } = await api.post<INutritionPlan>(
-        "nutritionplan/",
-        payload
-      )
-      return data
-    },
+  return useMutation<INutritionPlan, Error, INutritionPlan>({
+    mutationFn: (payload) =>
+      api.post<INutritionPlan>("nutritionplan/", payload).then((res) => res.data),
     onSuccess: () => {
-      // 2) invalida a query existente para recarregar os dados
       queryClient.invalidateQueries({ queryKey: ["nutritionPlan"] })
     },
   })
 }
+
+export const useDeleteNutritionPlan = () => {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, number>({
+    mutationFn: (id) => api.delete(`nutritionplan/${id}/`).then(() => {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["nutritionPlan"] })
+    },
+  })
+}
+
+/** ← NOVO HOOK: busca um plano pelo seu ID → */
+export const useNutritionPlanById = (id: number) =>
+  useQuery<INutritionPlan, Error>({
+    queryKey: ["nutritionPlan", id],
+    queryFn: async () => {
+      const { data } = await api.get<INutritionPlan>(`nutritionplan/${id}/`)
+      return data
+    },
+    enabled: !!id, // só roda se id for truthy
+  })

@@ -2,7 +2,7 @@
 import axios, { InternalAxiosRequestConfig } from "axios"
 
 const ACCESS_TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0ODk2ODkxLCJpYXQiOjE3NDQ4OTYyOTEsImp0aSI6IjIwYzdlNDQzMTE2ZTQxYmE4ZTE0MDJmZjUzN2RkYTE0IiwidXNlcl9pZCI6MjE3MTk0fQ.EE-r9-Ugp7585gEUkVkx5E4HljHoFyRZgY6xNFmE2J4"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1MDcxOTQ0LCJpYXQiOjE3NDUwNzEzNDQsImp0aSI6IjhlY2VlNzZkNDdjZTQ4ZTA4NzVhOThmNWY3Zjk1YTNiIiwidXNlcl9pZCI6MjE3MTk0fQ.gNdAVYVba0r3cYn6i__v0IjOimZQ8cUwPwrtsxxD2Pk"
 
 const api = axios.create({
   baseURL: "https://wger.de/api/v2/",

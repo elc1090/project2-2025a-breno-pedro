@@ -10,7 +10,8 @@ import { Switch } from "@/components/ui/switch"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, SubmitHandler } from "react-hook-form"
 import { z } from "zod"
-import { Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2 } from "lucide-react"
+import Link from "next/link"
 
 const formSchema = z.object({
   description: z.string().min(3, {
@@ -53,6 +54,12 @@ export default function CreateNutritionPlan() {
 
   return (
     <div className="container max-w-3xl py-10">
+      <Link href={"/"}>
+        <Button>
+          <ArrowLeft />
+          Voltar
+        </Button>
+      </Link>
       <Card>
         <CardHeader>
           <CardTitle>Create Nutrition Plan</CardTitle>

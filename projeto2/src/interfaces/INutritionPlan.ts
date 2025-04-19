@@ -1,4 +1,6 @@
 export interface INutritionPlan {
+    id: number
+    creation_date: string
     description: string
     only_logging: boolean
     goal_energy: number | null
