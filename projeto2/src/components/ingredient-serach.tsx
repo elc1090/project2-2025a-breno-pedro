@@ -6,14 +6,11 @@ import { useIngredientDetails } from "@/hooks/useIngredientDetails"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AlertCircle, ArrowUpDown, Filter, Plus, Search, Trash2, X } from "lucide-react"
+import { AlertCircle, ArrowUpDown, Plus, Search, Trash2} from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { LoadingSpinner } from "@/components/loading-spinner"
@@ -34,8 +31,6 @@ interface Filters {
   foodType: string
   sortBy: string
 }
-
-const FOOD_TYPES = ["Todos", "Proteínas", "Carboidratos", "Frutas", "Vegetais", "Laticínios", "Outros"]
 
 // Função para garantir que valores numéricos sejam exibidos corretamente
 const safeNumber = (value: any): number => {
@@ -70,14 +65,6 @@ export default function IngredientSearch() {
     return []
   })
 
-  const [filters, setFilters] = useState<Filters>({
-    maxCalories: 1000,
-    minProtein: 0,
-    foodType: "Todos",
-    sortBy: "name",
-  })
-
-  const [showFilters, setShowFilters] = useState(false)
   const [dailyGoal, setDailyGoal] = useState(() => {
     if (typeof window !== "undefined") {
       return JSON.parse(
@@ -108,17 +95,9 @@ export default function IngredientSearch() {
     isLoading: detailsLoading,
     error: detailsError,
   } = useIngredientDetails(selectedId ?? undefined)
+
   const [quantity, setQuantity] = useState(1)
 
-  // Log para debug
-  useEffect(() => {
-    if (selected) {
-      console.log("Dados do ingrediente selecionado na UI:", selected)
-    }
-    if (detailsError) {
-      console.error("Erro ao carregar detalhes:", detailsError)
-    }
-  }, [selected, detailsError])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -201,68 +180,6 @@ export default function IngredientSearch() {
     }
   }
 
-  // Helper function to categorize foods (simplified)
-  const mapFoodToType = (name: string | undefined): string => {
-    if (!name) return "Outros"
-
-    const lowerName = name.toLowerCase()
-    if (
-      lowerName.includes("carne") ||
-      lowerName.includes("frango") ||
-      lowerName.includes("peixe") ||
-      lowerName.includes("ovo")
-    )
-      return "Proteínas"
-    if (
-      lowerName.includes("arroz") ||
-      lowerName.includes("pão") ||
-      lowerName.includes("massa") ||
-      lowerName.includes("batata")
-    )
-      return "Carboidratos"
-    if (
-      lowerName.includes("maçã") ||
-      lowerName.includes("banana") ||
-      lowerName.includes("laranja") ||
-      lowerName.includes("fruta")
-    )
-      return "Frutas"
-    if (
-      lowerName.includes("alface") ||
-      lowerName.includes("tomate") ||
-      lowerName.includes("cenoura") ||
-      lowerName.includes("vegetal")
-    )
-      return "Vegetais"
-    if (lowerName.includes("leite") || lowerName.includes("queijo") || lowerName.includes("iogurte"))
-      return "Laticínios"
-    return "Outros"
-  }
-
-  const filteredSuggestions = suggestions?.filter((sug) => {
-    // Apply filters if we have the detailed data
-    if (selected && sug.data.id === selected.id) {
-      return (
-        selected.energy <= filters.maxCalories &&
-        selected.protein >= filters.minProtein &&
-        (filters.foodType === "Todos" || mapFoodToType(selected.name) === filters.foodType)
-      )
-    }
-    return true
-  })
-
-  const sortedMeal = [...meal].sort((a, b) => {
-    switch (filters.sortBy) {
-      case "calories":
-        return b.calories - a.calories
-      case "protein":
-        return b.protein - a.protein
-      case "name":
-      default:
-        return a.name.localeCompare(b.name)
-    }
-  })
-
   const calculatePercentage = (value: number, goal: number) => {
     return Math.min(Math.round((value / goal) * 100), 100)
   }
@@ -278,19 +195,7 @@ export default function IngredientSearch() {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Rastreador de Nutrição</span>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={() => setShowFilters(!showFilters)}>
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Filtrar alimentos</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <span>Agenda de Nutrição</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -359,82 +264,15 @@ export default function IngredientSearch() {
             </Sheet>
           </div>
 
-          {showFilters && (
-            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg mb-6 space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium">Filtros</h3>
-                <Button variant="ghost" size="icon" onClick={() => setShowFilters(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm">Máximo de Calorias: {filters.maxCalories} kcal</label>
-                  <Slider
-                    value={[filters.maxCalories]}
-                    min={0}
-                    max={1000}
-                    step={50}
-                    onValueChange={(value) => setFilters({ ...filters, maxCalories: value[0] })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm">Mínimo de Proteínas: {filters.minProtein} g</label>
-                  <Slider
-                    value={[filters.minProtein]}
-                    min={0}
-                    max={50}
-                    step={1}
-                    onValueChange={(value) => setFilters({ ...filters, minProtein: value[0] })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm">Tipo de Alimento</label>
-                  <Select
-                    value={filters.foodType}
-                    onValueChange={(value) => setFilters({ ...filters, foodType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FOOD_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm">Ordenar por</label>
-                  <Select value={filters.sortBy} onValueChange={(value) => setFilters({ ...filters, sortBy: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Ordenar por" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="name">Nome</SelectItem>
-                      <SelectItem value="calories">Calorias</SelectItem>
-                      <SelectItem value="protein">Proteínas</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          )}
-
+          
           {/* Sugestões */}
           {query && (
             <>
               {suggestionsLoading ? (
                 <LoadingSpinner className="my-6" />
-              ) : filteredSuggestions && filteredSuggestions.length > 0 ? (
+              ) : suggestions && suggestions.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
-                  {filteredSuggestions.map((sug) => (
+                  {suggestions.map((sug) => (
                     <Button
                       key={sug.data.id}
                       variant="outline"
@@ -449,11 +287,14 @@ export default function IngredientSearch() {
                 <Alert className="mb-6">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Nenhum resultado</AlertTitle>
-                  <AlertDescription>Nenhum alimento encontrado com os critérios de busca.</AlertDescription>
+                  <AlertDescription>
+                    Nenhum alimento encontrado com os critérios de busca.
+                  </AlertDescription>
                 </Alert>
               )}
             </>
           )}
+
 
           {/* Detalhes do alimento */}
           {selectedId && (
@@ -469,27 +310,10 @@ export default function IngredientSearch() {
                   <CardHeader>
                     <CardTitle className="text-lg flex justify-between items-center">
                       <span>{selected.name}</span>
-                      <Badge variant="outline">{mapFoodToType(selected.name)}</Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-col md:flex-row gap-4 mb-4">
-                      {selected.image && (
-                        <div className="w-full md:w-1/3">
-                          <img
-                            src={selected.image || "/placeholder.svg"}
-                            alt={selected.name}
-                            className="w-full h-auto object-cover rounded-lg"
-                            onError={(e) => {
-                              // Fallback para quando a imagem não carrega
-                              ;(e.target as HTMLImageElement).style.display = "none"
-                            }}
-                          />
-                        </div>
-                      )}
-                      <div
-                        className={`grid grid-cols-2 md:grid-cols-${selected.image ? "2" : "4"} gap-4 ${selected.image ? "w-full md:w-2/3" : "w-full"}`}
-                      >
+                    <div className="grid grid-cols-4 md:flex-row gap-4 mb-4">
                         <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
                           <div className="text-2xl font-bold">{safeNumber(selected.energy)}</div>
                           <div className="text-xs text-muted-foreground">Calorias (kcal)</div>
@@ -535,7 +359,6 @@ export default function IngredientSearch() {
                           </div>
                         )}
                       </div>
-                    </div>
 
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
@@ -606,7 +429,6 @@ export default function IngredientSearch() {
                               variant="ghost"
                               size="sm"
                               className="font-medium"
-                              onClick={() => setFilters({ ...filters, sortBy: "name" })}
                             >
                               Nome
                               <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -617,7 +439,6 @@ export default function IngredientSearch() {
                               variant="ghost"
                               size="sm"
                               className="font-medium"
-                              onClick={() => setFilters({ ...filters, sortBy: "calories" })}
                             >
                               Calorias
                               <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -628,7 +449,7 @@ export default function IngredientSearch() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {sortedMeal.map((item) => (
+                        {meal.map((item) => (
                           <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.name}</TableCell>
                             <TableCell>{item.calories * item.quantity} kcal</TableCell>

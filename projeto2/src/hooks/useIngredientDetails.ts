@@ -20,27 +20,18 @@ export function useIngredientDetails(id?: number, amount = 100) {
       setError(null)
 
       try {
-        // Buscar valores nutricionais e informações básicas em paralelo
         const [nutritionalValues, basicInfo] = await Promise.all([
-          getIngredientNutritionalValues(id),
+          getIngredientNutritionalValues(id, amount), // <- aqui usa o amount
           getIngredientBasicInfo(id),
         ])
 
-        // Verificar se temos os dados nutricionais
-        if (!nutritionalValues) {
-          throw new Error("Não foi possível obter os valores nutricionais")
-        }
-
-        // Combinar os dados, adicionando a imagem do ingrediente
         const combinedData: IngredientNutritionalValues = {
           ...nutritionalValues,
-          image: basicInfo.image, // Adicionar a imagem das informações básicas
+          image: basicInfo.image,
         }
 
-        console.log("Dados nutricionais combinados:", combinedData)
         setData(combinedData)
       } catch (err) {
-        console.error("Erro ao carregar detalhes do ingrediente:", err)
         setError(err instanceof Error ? err : new Error("Erro desconhecido"))
       } finally {
         setIsLoading(false)
@@ -48,7 +39,7 @@ export function useIngredientDetails(id?: number, amount = 100) {
     }
 
     fetchData()
-  }, [id])
+  }, [id, amount]) // <- adiciona amount como dependência
 
   return { data, isLoading, error }
 }
