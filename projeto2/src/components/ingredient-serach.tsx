@@ -271,7 +271,7 @@ export default function IngredientSearch() {
               {suggestionsLoading ? (
                 <LoadingSpinner className="my-6" />
               ) : suggestions && suggestions.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
+                <div className="grid grid-cols-3 md:grid-cols-3 gap-2 mb-6 max-h-48 overflow-y-auto">
                   {suggestions.map((sug) => (
                     <Button
                       key={sug.data.id}
