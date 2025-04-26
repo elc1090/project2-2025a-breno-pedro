@@ -89,10 +89,10 @@ export default function IngredientSearch() {
     }
 
     setTotals({
-      calories: totals.calories + item.calories * quantity,
-      protein: totals.protein + item.protein * quantity,
-      carbs: totals.carbs * quantity,
-      fat: totals.fat * quantity,
+      calories: totals.calories + item.calories,
+      protein: totals.protein + item.protein,
+      carbs: totals.carbs + item.carbohydrates,
+      fat: totals.fat + item.fat,
     })
 
     setSelectedId(null)
@@ -113,10 +113,10 @@ export default function IngredientSearch() {
     }
 
     setTotals({
-      calories: totals.calories - itemToRemove.calories * itemToRemove.quantity,
-      protein: totals.protein - itemToRemove.protein * itemToRemove.quantity,
-      carbs: totals.carbs - itemToRemove.carbohydrates * itemToRemove.quantity,
-      fat: totals.fat - itemToRemove.fat * itemToRemove.quantity,
+      calories: totals.calories - itemToRemove.calories,
+      protein: totals.protein - itemToRemove.protein,
+      carbs: totals.carbs - itemToRemove.carbohydrates,
+      fat: totals.fat - itemToRemove.fat,
     })
   }
 
@@ -158,6 +158,7 @@ export default function IngredientSearch() {
 
   const formatNutritionalValue = (value: any, unit = "g"): string => {
     const num = safeNumber(value)
+    const normalized = Object.is(num, -0) ? 0 : num
     return `${num.toFixed(1)} ${unit}`
   }
 
