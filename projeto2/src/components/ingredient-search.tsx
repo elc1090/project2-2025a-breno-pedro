@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AlertCircle, ArrowUpDown, Plus, Search, Trash2} from "lucide-react"
+import { AlertCircle, ArrowUpDown, Plus, Search, Trash2 } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -25,34 +25,15 @@ interface MealItem {
   quantity: number
 }
 
-interface Filters {
-  maxCalories: number
-  minProtein: number
-  foodType: string
-  sortBy: string
-}
-
-// Função para garantir que valores numéricos sejam exibidos corretamente
 const safeNumber = (value: any): number => {
-  // Se for undefined ou null, retorna 0
   if (value === undefined || value === null) return 0
-
-  // Se já for um número, retorna ele mesmo (garantindo que não seja negativo)
   if (typeof value === "number") return value < 0 ? 0 : value
-
-  // Se for uma string
   if (typeof value === "string") {
-    // Se for apenas um traço ou vazio, retorna 0
     if (value === "-" || value.trim() === "") return 0
-
-    // Tenta converter para número
     const num = Number.parseFloat(value)
-
-    // Se for um número válido, retorna ele (garantindo que não seja negativo)
     if (!isNaN(num)) return num < 0 ? 0 : num
   }
 
-  // Para qualquer outro caso, retorna 0
   return 0
 }
 
@@ -86,28 +67,20 @@ export default function IngredientSearch() {
     )
     return t
   })
+  const [quantity, setQuantity] = useState(100)
 
-  // Adicionar estado de loading nas sugestões
   const { data: suggestions, isLoading: suggestionsLoading } = useIngredientSuggestion(query)
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const {
-    data: selected,
-    isLoading: detailsLoading,
-    error: detailsError,
-  } = useIngredientDetails(selectedId ?? undefined)
+  const { data: selected, isLoading: detailsLoading, error: detailsError } = useIngredientDetails(selectedId ?? undefined, quantity)
 
-  const [quantity, setQuantity] = useState(1)
-
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("dailyGoal", JSON.stringify(dailyGoal))
-    }
-  }, [dailyGoal])
 
   const addToMeal = (item: Omit<MealItem, "id" | "quantity">) => {
     const id = Date.now().toString()
-    const newItem = { ...item, id, quantity }
+    const newItem: MealItem = {
+      ...item,
+      id,
+      quantity,
+    }
     const updated = [...meal, newItem]
     setMeal(updated)
 
@@ -118,13 +91,15 @@ export default function IngredientSearch() {
     setTotals({
       calories: totals.calories + item.calories * quantity,
       protein: totals.protein + item.protein * quantity,
-      carbs: totals.carbs + item.carbohydrates * quantity,
-      fat: totals.fat + item.fat * quantity,
+      carbs: totals.carbs * quantity,
+      fat: totals.fat * quantity,
     })
 
     setSelectedId(null)
-    setQuantity(1)
+    setQuantity(100)
+    console.log("nome", item.name)
   }
+
 
   const removeFromMeal = (id: string) => {
     const itemToRemove = meal.find((item) => item.id === id)
@@ -158,10 +133,7 @@ export default function IngredientSearch() {
 
     const updated = meal.map((item) => {
       if (item.id === id) {
-        // Calculate the difference to update totals
         const diff = newQuantity - item.quantity
-
-        // Update totals
         setTotals({
           calories: totals.calories + item.calories * diff,
           protein: totals.protein + item.protein * diff,
@@ -184,11 +156,33 @@ export default function IngredientSearch() {
     return Math.min(Math.round((value / goal) * 100), 100)
   }
 
-  // Formatar valores nutricionais para exibição
   const formatNutritionalValue = (value: any, unit = "g"): string => {
     const num = safeNumber(value)
     return `${num.toFixed(1)} ${unit}`
   }
+
+  const [favorites, setFavorites] = useState<MealItem[]>(() => {
+    if (typeof window !== "undefined") {
+      return JSON.parse(localStorage.getItem("favorites") || "[]")
+    }
+    return []
+  })
+
+  const addToFavorites = (item: Omit<MealItem, "id" | "quantity">) => {
+    const id = Date.now().toString()
+    const newFavorite: MealItem = {
+      ...item,
+      id,
+      quantity: 100,
+    }
+    const updatedFavorites = [...favorites, newFavorite]
+    setFavorites(updatedFavorites)
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("favorites", JSON.stringify(updatedFavorites))
+    }
+  }
+
 
   return (
     <div className="container py-10 max-w-4xl mx-auto">
@@ -264,25 +258,33 @@ export default function IngredientSearch() {
             </Sheet>
           </div>
 
-          
+
           {/* Sugestões */}
           {query && (
             <>
               {suggestionsLoading ? (
                 <LoadingSpinner className="my-6" />
               ) : suggestions && suggestions.length > 0 ? (
-                <div className="grid grid-cols-3 md:grid-cols-3 gap-2 mb-6 max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-3 md:grid-cols-3 gap-2 mb-6 max-h-68 overflow-y-auto">
                   {suggestions.map((sug) => (
                     <Button
                       key={sug.data.id}
                       variant="outline"
-                      className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
+                      className="min-h-[80px] justify-start flex items-center gap-4"
                       onClick={() => setSelectedId(sug.data.id)}
                     >
-                      {sug.value}
+                      {sug.data.image && (
+                        <img
+                          src={`https://wger.de${sug.data.image}`}
+                          alt="Imagem do ingrediente"
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+                      )}
+                      <span>{sug.value}</span>
                     </Button>
                   ))}
                 </div>
+
               ) : (
                 <Alert className="mb-6">
                   <AlertCircle className="h-4 w-4" />
@@ -314,80 +316,98 @@ export default function IngredientSearch() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-4 md:flex-row gap-4 mb-4">
-                        <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                          <div className="text-2xl font-bold">{safeNumber(selected.energy)}</div>
-                          <div className="text-xs text-muted-foreground">Calorias (kcal)</div>
-                        </div>
-                        <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                          <div className="text-2xl font-bold">{formatNutritionalValue(selected.protein)}</div>
-                          <div className="text-xs text-muted-foreground">Proteínas (g)</div>
-                        </div>
-                        <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                          <div className="text-2xl font-bold">{formatNutritionalValue(selected.carbohydrates)}</div>
-                          <div className="text-xs text-muted-foreground">Carboidratos (g)</div>
-                        </div>
-                        <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                          <div className="text-2xl font-bold">{formatNutritionalValue(selected.fat)}</div>
-                          <div className="text-xs text-muted-foreground">Gorduras (g)</div>
-                        </div>
-                        {selected.fiber !== undefined && (
-                          <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                            <div className="text-2xl font-bold">{formatNutritionalValue(selected.fiber)}</div>
-                            <div className="text-xs text-muted-foreground">Fibras (g)</div>
-                          </div>
-                        )}
-                        {selected.sodium !== undefined && (
-                          <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                            <div className="text-2xl font-bold">{formatNutritionalValue(selected.sodium, "mg")}</div>
-                            <div className="text-xs text-muted-foreground">Sódio (mg)</div>
-                          </div>
-                        )}
-
-                        {/* Adicionar novos campos nutricionais */}
-                        {selected.carbohydrates_sugar !== undefined && (
-                          <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                            <div className="text-2xl font-bold">
-                              {formatNutritionalValue(selected.carbohydrates_sugar)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">Açúcares (g)</div>
-                          </div>
-                        )}
-                        {selected.fat_saturated !== undefined && (
-                          <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                            <div className="text-2xl font-bold">{formatNutritionalValue(selected.fat_saturated)}</div>
-                            <div className="text-xs text-muted-foreground">Gorduras Saturadas (g)</div>
-                          </div>
-                        )}
+                      <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                        <div className="text-2xl font-bold">{safeNumber(selected.energy)}</div>
+                        <div className="text-xs text-muted-foreground">Calorias (kcal)</div>
                       </div>
+                      <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                        <div className="text-2xl font-bold">{formatNutritionalValue(selected.protein)}</div>
+                        <div className="text-xs text-muted-foreground">Proteínas (g)</div>
+                      </div>
+                      <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                        <div className="text-2xl font-bold">{formatNutritionalValue(selected.carbohydrates)}</div>
+                        <div className="text-xs text-muted-foreground">Carboidratos (g)</div>
+                      </div>
+                      <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                        <div className="text-2xl font-bold">{formatNutritionalValue(selected.fat)}</div>
+                        <div className="text-xs text-muted-foreground">Gorduras (g)</div>
+                      </div>
+                      {selected.fiber !== undefined && (
+                        <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                          <div className="text-2xl font-bold">{formatNutritionalValue(selected.fiber)}</div>
+                          <div className="text-xs text-muted-foreground">Fibras (g)</div>
+                        </div>
+                      )}
+                      {selected.sodium !== undefined && (
+                        <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                          <div className="text-2xl font-bold">{formatNutritionalValue(selected.sodium, "mg")}</div>
+                          <div className="text-xs text-muted-foreground">Sódio (mg)</div>
+                        </div>
+                      )}
+
+                      {/* Adicionar novos campos nutricionais */}
+                      {selected.carbohydrates_sugar !== undefined && (
+                        <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                          <div className="text-2xl font-bold">
+                            {formatNutritionalValue(selected.carbohydrates_sugar)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Açúcares (g)</div>
+                        </div>
+                      )}
+                      {selected.fat_saturated !== undefined && (
+                        <div className="text-center p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                          <div className="text-2xl font-bold">{formatNutritionalValue(selected.fat_saturated)}</div>
+                          <div className="text-xs text-muted-foreground">Gorduras Saturadas (g)</div>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
-                        <label className="text-sm mb-1 block">Quantidade</label>
-                        <div className="flex items-center">
-                          <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                            -
-                          </Button>
-                          <div className="w-12 text-center">{quantity}</div>
-                          <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>
-                            +
-                          </Button>
-                        </div>
+                        <label className="text-sm mb-1 block">Quantidade em gramas</label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={quantity}
+                          onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                          className="w-24 text-center"
+                        />
                       </div>
-                      <Button
-                        className="flex gap-2"
-                        onClick={() =>
-                          addToMeal({
-                            name: selected.name,
-                            calories: safeNumber(selected.energy),
-                            protein: safeNumber(selected.protein),
-                            fat: safeNumber(selected.fat),
-                            carbohydrates: safeNumber(selected.carbohydrates),
-                          })
-                        }
-                      >
-                        <Plus className="h-4 w-4" />
-                        Adicionar à Refeição
-                      </Button>
+
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          className="flex gap-2"
+                          onClick={() => {
+                            addToMeal({
+                              name: selected.name,
+                              calories: safeNumber(selected.energy),
+                              protein: safeNumber(selected.protein),
+                              fat: safeNumber(selected.fat),
+                              carbohydrates: safeNumber(selected.carbohydrates),
+                            })
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Adicionar à Refeição
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          className="flex gap-2"
+                          onClick={() => {
+                            addToFavorites({
+                              name: selected.name,
+                              calories: safeNumber(selected.energy),
+                              protein: safeNumber(selected.protein),
+                              fat: safeNumber(selected.fat),
+                              carbohydrates: safeNumber(selected.carbohydrates),
+                            })
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Adicionar aos Favoritos
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -404,17 +424,19 @@ export default function IngredientSearch() {
           )}
 
           <Tabs defaultValue="meal">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="meal">Refeição</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrição</TabsTrigger>
+              <TabsTrigger value="favorites">Favoritos</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="meal" className="mt-4">
               {meal.length > 0 ? (
                 <>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-medium">Alimentos Adicionados</h3>
-                    <Button variant="outline" size="sm" onClick={clearMeal} className="text-red-500">
+                    <Button variant="outline" onClick={clearMeal} className="text-red-500">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Limpar
                     </Button>
@@ -425,24 +447,14 @@ export default function IngredientSearch() {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[300px]">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="font-medium"
-                            >
+                            <div className="font-medium">
                               Nome
-                              <ArrowUpDown className="ml-2 h-4 w-4" />
-                            </Button>
+                            </div>
                           </TableHead>
                           <TableHead>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="font-medium"
-                            >
+                            <div className="font-medium">
                               Calorias
-                              <ArrowUpDown className="ml-2 h-4 w-4" />
-                            </Button>
+                            </div>
                           </TableHead>
                           <TableHead>Qtd</TableHead>
                           <TableHead></TableHead>
@@ -452,24 +464,10 @@ export default function IngredientSearch() {
                         {meal.map((item) => (
                           <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell>{item.calories * item.quantity} kcal</TableCell>
+                            <TableCell>{item.calories} kcal</TableCell>
                             <TableCell>
                               <div className="flex items-center">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                >
-                                  -
-                                </Button>
                                 <span className="w-8 text-center">{item.quantity}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                >
-                                  +
-                                </Button>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -494,7 +492,7 @@ export default function IngredientSearch() {
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Calorias</span>
                     <span className="text-sm">
-                      {totals.calories} / {dailyGoal.calories} kcal
+                      {totals.calories.toFixed(2)} / {dailyGoal.calories} kcal
                     </span>
                   </div>
                   <Progress value={calculatePercentage(totals.calories, dailyGoal.calories)} />
@@ -504,7 +502,7 @@ export default function IngredientSearch() {
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Proteínas</span>
                     <span className="text-sm">
-                      {totals.protein} / {dailyGoal.protein} g
+                      {totals.protein.toFixed(2)} / {dailyGoal.protein} g
                     </span>
                   </div>
                   <Progress value={calculatePercentage(totals.protein, dailyGoal.protein)} />
@@ -514,7 +512,7 @@ export default function IngredientSearch() {
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Carboidratos</span>
                     <span className="text-sm">
-                      {totals.carbs} / {dailyGoal.carbs} g
+                      {totals.carbs.toFixed(2)} / {dailyGoal.carbs} g
                     </span>
                   </div>
                   <Progress value={calculatePercentage(totals.carbs, dailyGoal.carbs)} />
@@ -524,7 +522,7 @@ export default function IngredientSearch() {
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Gorduras</span>
                     <span className="text-sm">
-                      {totals.fat} / {dailyGoal.fat} g
+                      {totals.fat.toFixed(2)} / {dailyGoal.fat} g
                     </span>
                   </div>
                   <Progress value={calculatePercentage(totals.fat, dailyGoal.fat)} />
@@ -534,7 +532,7 @@ export default function IngredientSearch() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
-                        <div className="text-3xl font-bold">{totals.calories}</div>
+                        <div className="text-3xl font-bold">{totals.calories.toFixed(2)}</div>
                         <div className="text-xs text-muted-foreground mt-1">Calorias (kcal)</div>
                       </div>
                     </CardContent>
@@ -543,7 +541,7 @@ export default function IngredientSearch() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
-                        <div className="text-3xl font-bold">{totals.protein}</div>
+                        <div className="text-3xl font-bold">{totals.protein.toFixed(2)}</div>
                         <div className="text-xs text-muted-foreground mt-1">Proteínas (g)</div>
                       </div>
                     </CardContent>
@@ -552,7 +550,7 @@ export default function IngredientSearch() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
-                        <div className="text-3xl font-bold">{totals.carbs}</div>
+                        <div className="text-3xl font-bold">{totals.carbs.toFixed(2)}</div>
                         <div className="text-xs text-muted-foreground mt-1">Carboidratos (g)</div>
                       </div>
                     </CardContent>
@@ -561,7 +559,7 @@ export default function IngredientSearch() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
-                        <div className="text-3xl font-bold">{totals.fat}</div>
+                        <div className="text-3xl font-bold">{totals.fat.toFixed(2)}</div>
                         <div className="text-xs text-muted-foreground mt-1">Gorduras (g)</div>
                       </div>
                     </CardContent>
@@ -569,6 +567,32 @@ export default function IngredientSearch() {
                 </div>
               </div>
             </TabsContent>
+
+            <TabsContent value="favorites" className="mt-4">
+              {favorites.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[300px]">Nome</TableHead>
+                        <TableHead>Calorias (100g)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {favorites.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>{item.calories} kcal</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">Nenhum favorito ainda</div>
+              )}
+            </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>

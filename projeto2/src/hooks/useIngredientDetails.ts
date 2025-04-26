@@ -15,31 +15,36 @@ export function useIngredientDetails(id?: number, amount = 100) {
       return
     }
 
-    const fetchData = async () => {
-      setIsLoading(true)
-      setError(null)
+    const timeout = setTimeout(() => {
+      const fetchData = async () => {
+        setIsLoading(true)
+        setError(null)
 
-      try {
-        const [nutritionalValues, basicInfo] = await Promise.all([
-          getIngredientNutritionalValues(id, amount), // <- aqui usa o amount
-          getIngredientBasicInfo(id),
-        ])
+        try {
+          const [nutritionalValues, basicInfo] = await Promise.all([
+            getIngredientNutritionalValues(id, amount),
+            getIngredientBasicInfo(id),
+          ])
 
-        const combinedData: IngredientNutritionalValues = {
-          ...nutritionalValues,
-          image: basicInfo.image,
+          const combinedData: IngredientNutritionalValues = {
+            ...nutritionalValues,
+            name: basicInfo.name,
+            image: basicInfo.image,
+          }
+
+          setData(combinedData)
+        } catch (err) {
+          setError(err instanceof Error ? err : new Error("Erro desconhecido"))
+        } finally {
+          setIsLoading(false)
         }
-
-        setData(combinedData)
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error("Erro desconhecido"))
-      } finally {
-        setIsLoading(false)
       }
-    }
 
-    fetchData()
-  }, [id, amount]) // <- adiciona amount como dependência
+      fetchData()
+    }, 500)
+
+    return () => clearTimeout(timeout)
+  }, [id, amount])
 
   return { data, isLoading, error }
 }

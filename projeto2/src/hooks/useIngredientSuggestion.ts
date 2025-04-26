@@ -29,7 +29,6 @@ export function useIngredientSuggestion(query: string) {
       }
     }
 
-    // Debounce para evitar muitas requisições enquanto o usuário digita
     const timeoutId = setTimeout(() => {
       fetchData()
     }, 300)

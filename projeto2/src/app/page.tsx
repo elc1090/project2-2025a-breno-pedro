@@ -1,4 +1,4 @@
-import IngredientSearch from "@/components/ingredient-serach"
+import IngredientSearch from "@/components/ingredient-search"
 
 export default function Home() {
   return (
