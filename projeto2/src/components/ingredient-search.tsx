@@ -41,12 +41,27 @@ const safeNumber = (value: any): number => {
 
 export default function IngredientSearch() {
   const [query, setQuery] = useState("")
-  const [meal, setMeal] = useState<MealItem[]>(() => {
+  const [meal, setMeal] = useState<MealItem[]>([]); 
+  const [isMealLoading, setIsMealLoading] = useState(true);
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      return JSON.parse(localStorage.getItem("meal") || "[]")
+      const storedMeal = localStorage.getItem("meal");
+      const loadedMeal = storedMeal ? JSON.parse(storedMeal) : [];
+      setMeal(loadedMeal);
+  
+      const newTotals = loadedMeal.reduce(
+        (acc, cur) => ({
+          calories: acc.calories + safeNumber(cur.calories),
+          protein: acc.protein + safeNumber(cur.protein),
+          carbs: acc.carbs + safeNumber(cur.carbohydrates),
+          fat: acc.fat + safeNumber(cur.fat),
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      );
+      setTotals(newTotals);
     }
-    return []
-  })
+    setIsMealLoading(false);
+  }, []);
 
   const [mealName, setMealName] = useState(() => {
     if (typeof window !== "undefined") {
@@ -93,32 +108,31 @@ export default function IngredientSearch() {
     }
   }, []);
 
-  const addToMeal = (item: Omit<MealItem, "id" | "quantity">) => {
-    const id = Date.now().toString()
+  const addToMeal = (item: Omit<MealItem, "id" | "quantity"> & { quantity?: number }) => {
+    const id = Date.now().toString();
     const newItem: MealItem = {
       ...item,
       id,
-      quantity,
-    }
-    const updated = [...meal, newItem]
-    setMeal(updated)
+      quantity: item.quantity !== undefined ? safeNumber(item.quantity) : quantity, // Usa a quantidade do favorito se existir, senão usa a quantidade padrão
+    };
+    const updated = [...meal, newItem];
+    setMeal(updated);
 
     if (typeof window !== "undefined") {
-      localStorage.setItem("meal", JSON.stringify(updated))
+      localStorage.setItem("meal", JSON.stringify(updated));
     }
 
-    setTotals({
-      calories: totals.calories + item.calories,
-      protein: totals.protein + item.protein,
-      carbs: totals.carbs + item.carbohydrates,
-      fat: totals.fat + item.fat,
-    })
+    setTotals((prevTotals) => ({
+      calories: prevTotals.calories + safeNumber(item.calories),
+      protein: prevTotals.protein + safeNumber(item.protein),
+      carbs: prevTotals.carbs + safeNumber(item.carbohydrates),
+      fat: prevTotals.fat + safeNumber(item.fat),
+    }));
 
-    setSelectedId(null)
-    setQuantity(100)
-    console.log("nome", item.name)
-  }
-
+    setSelectedId(null);
+    setQuantity(100);
+    console.log("nome", item.name);
+  };
 
   const removeFromMeal = (id: string) => {
     const itemToRemove = meal.find((item) => item.id === id)
@@ -192,7 +206,7 @@ export default function IngredientSearch() {
   const addToFavorites = (ingredient: Omit<MealItem, "id" | "quantity">) => {
     const isAlreadyFavorite = favoriteIngredients.some(fav => fav.name === ingredient.name);
     if (!isAlreadyFavorite) {
-      const updatedFavorites = [...favoriteIngredients, ingredient];
+      const updatedFavorites = [...favoriteIngredients, { ...ingredient, quantity: safeNumber(quantity) }]; // Inclui a quantidade atual
       setFavoriteIngredients(updatedFavorites);
       if (typeof window !== "undefined") {
         localStorage.setItem("favoriteIngredients", JSON.stringify(updatedFavorites));
@@ -218,7 +232,10 @@ export default function IngredientSearch() {
 
   const saveMeal = () => {
     if (meal.length > 0 && mealName.trim() !== "") {
-      const savedMeals = JSON.parse(localStorage.getItem("savedMeals") || "[]");
+      const totalGrams = meal.reduce((sum, item) => {
+        return sum + safeNumber(item.quantity);
+      }, 0);
+      console.log("Total de gramas calculado:", totalGrams);      const savedMeals = JSON.parse(localStorage.getItem("savedMeals") || "[]");
       const newMeal = {
         name: mealName.trim(),
         items: meal.map(item => ({ ...item })),
@@ -226,6 +243,7 @@ export default function IngredientSearch() {
         totalProtein: totals.protein,
         totalCarbs: totals.carbs,
         totalFat: totals.fat,
+        totalGrams: totalGrams, 
         savedAt: new Date().toISOString(),
       };
       const updatedSavedMeals = [...savedMeals, newMeal];
@@ -233,10 +251,10 @@ export default function IngredientSearch() {
       setSavedMealsList(updatedSavedMeals);
       setIsMealSaved(true);
       setTimeout(() => setIsMealSaved(false), 3000);
-      setMeal([]); 
-      setMealName(""); 
-      setTotals({ calories: 0, protein: 0, carbs: 0, fat: 0 }); // Zera os totais
-      localStorage.setItem("meal", JSON.stringify([]))
+      setMeal([]);
+      setMealName("");
+      setTotals({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+      localStorage.setItem("meal", JSON.stringify([]));
     } else {
       alert("Por favor, adicione pelo menos um item à refeição e dê um nome a ela.");
     }
@@ -522,7 +540,7 @@ export default function IngredientSearch() {
                               Calorias
                             </div>
                           </TableHead>
-                          <TableHead>Qtd</TableHead>
+                          <TableHead>Quantidade</TableHead>
                           <TableHead></TableHead>
                         </TableRow>
                       </TableHeader>
@@ -533,7 +551,7 @@ export default function IngredientSearch() {
                             <TableCell>{item.calories} kcal</TableCell>
                             <TableCell>
                               <div className="flex items-center">
-                                <span className="w-8 text-center">{item.quantity}</span>
+                                <span className="w-8 text-center">{item.quantity} g</span>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -728,21 +746,21 @@ export default function IngredientSearch() {
                           <tr>
                             <th className="py-2 font-medium text-left">Nome</th>
                             <th className="py-2 font-medium text-left">Calorias</th>
-                            <th className="py-2 font-medium text-left">Qtd</th>
+                            <th className="py-2 font-medium text-left">Quantidade</th>
                           </tr>
                         </thead>
                         <tbody>
                           {savedMeal.items.map((item) => (
                             <tr key={item.id}>
                               <td className="py-1">{item.name}</td>
-                              <td className="py-1">{item.calories} kcal</td>
-                              <td className="py-1">{item.quantity} g</td>
+                              <td className="py-1">{item.calories.toFixed(2)} kcal</td>
+                              <td className="py-1">{item.quantity.toFixed(2)} g</td>
                             </tr>
                           ))}
                           <tr className="font-bold">
                             <td className="py-2">Totais:</td>
                             <td className="py-2">{savedMeal.totalCalories.toFixed(2)} kcal</td>
-                            <td className="py-2"></td>
+                            <td className="py-2">{savedMeal.totalGrams.toFixed(2)} g</td>
                           </tr>
                         </tbody>
                       </table>
