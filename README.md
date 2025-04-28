@@ -1,7 +1,8 @@
 # Projeto: Consumindo uma API pública
 
 
-![Substitua a imagem ao lado por um screenshot do seu projeto](![image](https://github.com/user-attachments/assets/e8b7d370-48b8-4ca8-8fef-64f7160b4ec8))
+![image](https://github.com/user-attachments/assets/b4591560-c444-426f-88d8-aadf0fdeb864)
+
 
 
 Acesso: https://projeto2-zeta-two.vercel.app/
