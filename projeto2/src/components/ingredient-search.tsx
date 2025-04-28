@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal } from "react"
 import { useIngredientSuggestion } from "@/hooks/useIngredientSuggestion"
 import { useIngredientDetails } from "@/hooks/useIngredientDetails"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AlertCircle, ArrowUpDown, Plus, Search, Trash2 } from "lucide-react"
+import { AlertCircle, Plus, Search, Trash2 } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -41,16 +41,16 @@ const safeNumber = (value: any): number => {
 
 export default function IngredientSearch() {
   const [query, setQuery] = useState("")
-  const [meal, setMeal] = useState<MealItem[]>([]); 
+  const [meal, setMeal] = useState<MealItem[]>([]);
   const [isMealLoading, setIsMealLoading] = useState(true);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedMeal = localStorage.getItem("meal");
       const loadedMeal = storedMeal ? JSON.parse(storedMeal) : [];
       setMeal(loadedMeal);
-  
+
       const newTotals = loadedMeal.reduce(
-        (acc, cur) => ({
+        (acc: { calories: number; protein: number; carbs: number; fat: number }, cur: { calories: any; protein: any; carbohydrates: any; fat: any }) => ({
           calories: acc.calories + safeNumber(cur.calories),
           protein: acc.protein + safeNumber(cur.protein),
           carbs: acc.carbs + safeNumber(cur.carbohydrates),
@@ -131,7 +131,6 @@ export default function IngredientSearch() {
 
     setSelectedId(null);
     setQuantity(100);
-    console.log("nome", item.name);
   };
 
   const removeFromMeal = (id: string) => {
@@ -206,7 +205,7 @@ export default function IngredientSearch() {
   const addToFavorites = (ingredient: Omit<MealItem, "id" | "quantity">) => {
     const isAlreadyFavorite = favoriteIngredients.some(fav => fav.name === ingredient.name);
     if (!isAlreadyFavorite) {
-      const updatedFavorites = [...favoriteIngredients, { ...ingredient, quantity: safeNumber(quantity) }]; // Inclui a quantidade atual
+      const updatedFavorites = [...favoriteIngredients, { ...ingredient, quantity: safeNumber(quantity) }]
       setFavoriteIngredients(updatedFavorites);
       if (typeof window !== "undefined") {
         localStorage.setItem("favoriteIngredients", JSON.stringify(updatedFavorites));
@@ -235,7 +234,7 @@ export default function IngredientSearch() {
       const totalGrams = meal.reduce((sum, item) => {
         return sum + safeNumber(item.quantity);
       }, 0);
-      console.log("Total de gramas calculado:", totalGrams);      const savedMeals = JSON.parse(localStorage.getItem("savedMeals") || "[]");
+      console.log("Total de gramas calculado:", totalGrams); const savedMeals = JSON.parse(localStorage.getItem("savedMeals") || "[]");
       const newMeal = {
         name: mealName.trim(),
         items: meal.map(item => ({ ...item })),
@@ -243,7 +242,7 @@ export default function IngredientSearch() {
         totalProtein: totals.protein,
         totalCarbs: totals.carbs,
         totalFat: totals.fat,
-        totalGrams: totalGrams, 
+        totalGrams: totalGrams,
         savedAt: new Date().toISOString(),
       };
       const updatedSavedMeals = [...savedMeals, newMeal];
@@ -260,13 +259,15 @@ export default function IngredientSearch() {
     }
   };
 
-  const handleDeleteSavedMeal = (indexToDelete) => {
+  const handleDeleteSavedMeal = (indexToDelete: number) => {
     setSavedMealsList(prevMeals => {
       const updatedMeals = prevMeals.filter((_, index) => index !== indexToDelete);
-      localStorage.setItem('savedMeals', JSON.stringify(updatedMeals)); // Atualiza o localStorage
+      localStorage.setItem('savedMeals', JSON.stringify(updatedMeals));
       return updatedMeals;
     });
   };
+
+  console.log("calorias totais:", totals.calories.toFixed(2))
 
   return (
     <div className="container py-10 max-w-4xl mx-auto">
@@ -463,7 +464,7 @@ export default function IngredientSearch() {
                           className="flex gap-2"
                           onClick={() => {
                             addToMeal({
-                              name: selected.name,
+                              name: selected.name ?? "",
                               calories: safeNumber(selected.energy),
                               protein: safeNumber(selected.protein),
                               fat: safeNumber(selected.fat),
@@ -480,7 +481,7 @@ export default function IngredientSearch() {
                           className="flex gap-2"
                           onClick={() => {
                             addToFavorites({
-                              name: selected.name,
+                              name: selected.name ?? "",
                               calories: safeNumber(selected.energy),
                               protein: safeNumber(selected.protein),
                               fat: safeNumber(selected.fat),
@@ -652,126 +653,126 @@ export default function IngredientSearch() {
               </div>
             </TabsContent>
             <TabsContent value="meal" className="mt-4">
-            <div className="mb-4">
-              <Label htmlFor="meal-name-input" className="mb-2">Nome da Refeição:</Label>
-              <Input
-                type="text"
-                id="meal-name-input"
-                placeholder="Ex: Almoço de Quarta"
-                value={mealName}
-                onChange={(e) => setMealName(e.target.value)}
-              />
-            </div>
-          </TabsContent>
-          <Button
-            onClick={saveMeal}
-            disabled={meal.length === 0 || mealName.trim() === ""}
-            className="mb-4"
-          >
-            Salvar Refeição
-          </Button>
-          {isMealSaved && (
-            <Alert className="mb-4">
-              <CheckCircle className="h-4 w-4" />
-              <AlertTitle>Refeição Salva!</AlertTitle>
-            </Alert>
-          )}
-          <TabsContent value="favorites" className="mt-4">
-          {favoriteIngredients.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {favoriteIngredients.map((favorite) => (
-                <Card key={favorite.name}>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-sm font-semibold">{favorite.name}</h3>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeFromFavorites(favorite)}
-                        className="hover:text-red-500"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Calorias: {safeNumber(favorite.calories)} kcal, Proteínas: {formatNutritionalValue(favorite.protein)}, Carboidratos: {formatNutritionalValue(favorite.carbohydrates)}, Gorduras: {formatNutritionalValue(favorite.fat)}
-                    </p>
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" onClick={() => addToMeal(favorite)}>
-                        Selecionar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">Nenhum alimento adicionado aos favoritos ainda.</div>
-          )}
-        </TabsContent>
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-4">Refeições Salvas</h2>
-            {savedMealsList.length > 0 ? (
-              <div className="space-y-4">
-                {savedMealsList.map((savedMeal, index) => (
-                  <div key={index} className="rounded-md border p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <div>
-                        <h3 className="font-semibold">{savedMeal.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Salvo em: {new Date(savedMeal.savedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteSavedMeal(index)}
-                        className="text-red-500 hover:text-red-700 focus:outline-none"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="w-5 h-5"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.5 5a1.5 1.5 0 0 0-1.5-1.5H9A1.5 1.5 0 0 0 7.5 5v1.5h9V5Zm-9 3a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V9a1.5 1.5 0 0 0-1.5-1.5h-9Zm4.5 2.5a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1Zm3 0a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1Z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr>
-                            <th className="py-2 font-medium text-left">Nome</th>
-                            <th className="py-2 font-medium text-left">Calorias</th>
-                            <th className="py-2 font-medium text-left">Quantidade</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {savedMeal.items.map((item) => (
-                            <tr key={item.id}>
-                              <td className="py-1">{item.name}</td>
-                              <td className="py-1">{item.calories.toFixed(2)} kcal</td>
-                              <td className="py-1">{item.quantity.toFixed(2)} g</td>
-                            </tr>
-                          ))}
-                          <tr className="font-bold">
-                            <td className="py-2">Totais:</td>
-                            <td className="py-2">{savedMeal.totalCalories.toFixed(2)} kcal</td>
-                            <td className="py-2">{savedMeal.totalGrams.toFixed(2)} g</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
+              <div className="mb-4">
+                <Label htmlFor="meal-name-input" className="mb-2">Nome da Refeição:</Label>
+                <Input
+                  type="text"
+                  id="meal-name-input"
+                  placeholder="Ex: Almoço de Quarta"
+                  value={mealName}
+                  onChange={(e) => setMealName(e.target.value)}
+                />
               </div>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground">Não há refeições salvas ainda</div>
+            </TabsContent>
+            <Button
+              onClick={saveMeal}
+              disabled={meal.length === 0 || mealName.trim() === ""}
+              className="mb-4"
+            >
+              Salvar Refeição
+            </Button>
+            {isMealSaved && (
+              <Alert className="mb-4">
+                <CheckCircle className="h-4 w-4" />
+                <AlertTitle>Refeição Salva!</AlertTitle>
+              </Alert>
             )}
-          </div>
+            <TabsContent value="favorites" className="mt-4">
+              {favoriteIngredients.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {favoriteIngredients.map((favorite) => (
+                    <Card key={favorite.name}>
+                      <CardContent className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-sm font-semibold">{favorite.name}</h3>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeFromFavorites(favorite)}
+                            className="hover:text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Calorias: {safeNumber(favorite.calories)} kcal, Proteínas: {formatNutritionalValue(favorite.protein)}, Carboidratos: {formatNutritionalValue(favorite.carbohydrates)}, Gorduras: {formatNutritionalValue(favorite.fat)}
+                        </p>
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" onClick={() => addToMeal(favorite)}>
+                            Selecionar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">Nenhum alimento adicionado aos favoritos ainda.</div>
+              )}
+            </TabsContent>
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold mb-4">Refeições Salvas</h2>
+              {savedMealsList.length > 0 ? (
+                <div className="space-y-4">
+                  {savedMealsList.map((savedMeal, index) => (
+                    <div key={index} className="rounded-md border p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <div>
+                          <h3 className="font-semibold">{savedMeal.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Salvo em: {new Date(savedMeal.savedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteSavedMeal(index)}
+                          className="text-red-500 hover:text-red-700 focus:outline-none"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            className="w-5 h-5"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.5 5a1.5 1.5 0 0 0-1.5-1.5H9A1.5 1.5 0 0 0 7.5 5v1.5h9V5Zm-9 3a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V9a1.5 1.5 0 0 0-1.5-1.5h-9Zm4.5 2.5a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1Zm3 0a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1Z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr>
+                              <th className="py-2 font-medium text-left">Nome</th>
+                              <th className="py-2 font-medium text-left">Calorias</th>
+                              <th className="py-2 font-medium text-left">Quantidade</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {savedMeal.items.map((item: { id: Key | null | undefined; name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; calories: number; quantity: number }) => (
+                              <tr key={item.id}>
+                                <td className="py-1">{item.name}</td>
+                                <td className="py-1">{safeNumber(item.calories).toFixed(2)} kcal</td>
+                                <td className="py-1">{safeNumber(item.quantity).toFixed(2)} g</td>
+                              </tr>
+                            ))}
+                            <tr className="font-bold">
+                              <td className="py-2">Totais:</td>
+                              <td className="py-2">{safeNumber(savedMeal.totalCalories).toFixed(2)} kcal</td>
+                              <td className="py-2">{safeNumber(savedMeal.totalGrams).toFixed(2)} g</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">Não há refeições salvas ainda</div>
+              )}
+            </div>
           </Tabs>
         </CardContent>
       </Card>

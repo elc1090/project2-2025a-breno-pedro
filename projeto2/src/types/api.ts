@@ -1,5 +1,28 @@
 const API_BASE_URL = "https://wger.de/api/v2"
 
+export interface IngredientNutritionalValues {
+  energy: number
+  protein: number
+  carbohydrates: number
+  fat: number
+  carbohydrates_sugar?: number
+  fat_saturated?: number
+  fiber?: number
+  sodium?: number
+  name?: string
+  image?: string
+}
+
+export interface IngredientSearchResult {
+  id: number
+  value: string
+  data: {
+    id: number
+    name: string
+    image: string | null
+  }
+}
+
 export async function searchIngredients(term: string, language = "pt") {
   try {
     const response = await fetch(

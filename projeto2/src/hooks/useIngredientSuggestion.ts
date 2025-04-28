@@ -31,7 +31,7 @@ export function useIngredientSuggestion(query: string) {
 
     const timeoutId = setTimeout(() => {
       fetchData()
-    }, 300)
+    }, 500)
 
     return () => clearTimeout(timeoutId)
   }, [query])
