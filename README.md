@@ -9,7 +9,7 @@ Acesso: https://projeto2-zeta-two.vercel.app/
 
 
 ### Desenvolvedores
-Substitua este texto pela identificação da dupla: Breno Rosa e Pedro Henrique. Ambos do curso de Sistemas De Informação
+Breno Rosa e Pedro Henrique. Ambos do curso de Sistemas De Informação
 
 ### Nosso produto
 O projeto desenvolvido é uma aplicação web que permite ao usuário pesquisar alimentos, visualizar seus valores nutricionais (calorias, proteínas, carboidratos e gorduras), adicionar esses alimentos a uma refeição personalizada e acompanhar o total de nutrientes consumidos. Além disso, é possível favoritar alimentos para acesso rápido e salvar refeições completas para futuras consultas. A plataforma oferece também ajuste das metas diárias de consumo de macronutrientes, proporcionando um acompanhamento nutricional personalizado e intuitivo.
@@ -45,17 +45,10 @@ A Agenda Nutricional que criamos serve para o usuário ter uma breve noção das
 - TailwindCCSS
 
 #### Ambiente de desenvolvimento
-
-Substitua este trecho por uma lista detalhada dos ambientes/ferramentas de desenvolvimento utilizadas (por exemplo, VS Code + alguma extensão, etc.)
 - VS Code
-- Gemini e ChatGPT
 
 #### Referências e créditos
-- 
-
-
-
-
+- Gemini e ChatGPT (Utilizados para consultas)
 
 ---
 Projeto entregue para a disciplina de [Desenvolvimento de Software para a Web](http://github.com/andreainfufsm/elc1090-2025a) em 2025a
